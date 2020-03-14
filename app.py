@@ -1,3 +1,6 @@
+import random
+
+from PIL import ImageDraw, ImageFont
 from flask import Flask, Response, request, render_template
 from werkzeug.utils import secure_filename
 import os
@@ -51,6 +54,24 @@ def image_compose(IMAGES_PATH):
     return to_image.save(IMAGE_SAVE_PATH)  # 保存新图
 
 
+def concatText(info):
+    illegal_action = "违反禁止标线"
+    illegal_code = "1345"
+    security_code = str(getRandomSet(18)).upper()
+    illegal_text = "监测点信息：" + info['monitorPlace'] + "  " + "抓拍时间：" + info['cameraTime'] + " \n" \
+                   + "车牌号码：" + info['carNum'] + "  " + "违法行为：" + illegal_action + " \n" \
+                   + "违法代码：" + illegal_code + "    " + "防伪码：" + security_code
+    return illegal_text
+
+
+def getRandomSet(bits):
+    num_set = [chr(i) for i in range(48, 58)]
+    char_set = [chr(i) for i in range(97, 123)]
+    total_set = num_set + char_set
+    value_set = "".join(random.sample(total_set, bits))
+    return value_set
+
+
 # 上传图片
 @app.route("/photo/upload", methods=['POST', "GET"])
 def uploads():
@@ -58,47 +79,76 @@ def uploads():
         # 获取post过来的文件名称，从name=file参数中获取
         # file = request.files['file']
         files = request.files
-        FILE = ['file1', 'file2', 'file3', 'file4']
-        succ = 0
-        id = time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))
-        path = UPLOAD_FOLDER + '/' + id
-        os.mkdir(path)
-        os.chmod(path, stat.S_IRWXO + stat.S_IRWXG + stat.S_IRWXU)
-        for f in FILE:
-            file = files[f]
-            if file and allowed_file(file.filename):
-                print(file.filename)
-                # secure_filename方法会去掉文件名中的中文
-                # file_name = secure_filename(file.filename)
-                file_name = file.filename
+        INFO = ('file', 'carNum', 'monitorPlace', 'cameraTime')
+        form_data = request.form.to_dict()
+        # form_data.get("")
 
-                # path = os.path.join(app.config['UPLOAD_FOLDER'])
+        infos = []
+        for i in range(4):
+            index = i + 1
+            file = files[INFO[0] + str(index)]
+            img = Image.open(file)
+            info = {INFO[0]: img, INFO[1]: form_data.get(INFO[1] + str(index)),
+                    INFO[2]: form_data.get(INFO[2] + str(index)),
+                    INFO[3]: form_data.get(INFO[3] + str(index))}
+            infos.append(info)
 
-                # 保存图片
-                # file.save(os.path.join(app.config['UPLOAD_FOLDER'], file_name))
-                file.save(path + '/' + file_name)
-                succ += 1
-        if succ == len(FILE):
-            print('upload success')
-            image_compose(path)
-            with open(path + "//final.jpg", 'rb') as f:
-                image = f.read()
-                resp = Response(image, mimetype="image/jpg")
-                return resp
-        else:
-            return "upload file fail"
+        TEXT_HEIGHT = 60  # 文本框高度
+        pic_width = infos[0][INFO[0]].size[0]
+        pic_height = infos[0][INFO[0]].size[1]
+        width = 2 * pic_width  # 上传的4张图片的宽度和高度需一致
+        height = pic_height * 2 + TEXT_HEIGHT * 2
+        pj = Image.new("RGB", [width, height], "white")
+
+        img_1 = infos[0][INFO[0]]
+        pj.paste(img_1, (0, 0, pic_width, pic_height))
+        img_1_1 = drawTextBlock(img_1, TEXT_HEIGHT, infos[0])
+        pj.paste(img_1_1, (0, pic_height, pic_width, pic_height + TEXT_HEIGHT))
+
+        img_2 = infos[1][INFO[0]]
+        pj.paste(img_2, (pic_width, 0, 2 * pic_width, pic_height))
+        img_2_1 = drawTextBlock(img_2, TEXT_HEIGHT, infos[1])
+        pj.paste(img_2_1, (pic_width, pic_height, 2 * pic_width, pic_height + TEXT_HEIGHT))
+
+        img_3 = infos[2][INFO[0]]
+        pj.paste(img_3, (0, pic_height + TEXT_HEIGHT, pic_width, 2 * pic_height + TEXT_HEIGHT))
+        img_3_1 = drawTextBlock(img_3, TEXT_HEIGHT, infos[2])
+        pj.paste(img_3_1, (0, 2 * pic_height + TEXT_HEIGHT, pic_width,
+                           2 * pic_height + 2 * TEXT_HEIGHT))
+
+        img_4 = infos[3][INFO[0]]
+        pj.paste(img_4, (pic_width, pic_height + TEXT_HEIGHT, 2 * pic_width, 2 * pic_height + TEXT_HEIGHT))
+        img_4_1 = drawTextBlock(img_4, TEXT_HEIGHT, infos[3])
+        pj.paste(img_4_1, (pic_width, 2 * pic_height + TEXT_HEIGHT, 2 * pic_width, 2 * pic_height + 2 * TEXT_HEIGHT))
+        save_file_path = UPLOAD_FOLDER + "/" + form_data.get("fileName")+".jpg"
+        pj.save(save_file_path)
+
+        with open(save_file_path, 'rb') as f:
+            image = f.read()
+            resp = Response(image, mimetype="image/jpg")
+            return resp
+        resp = Response(pj, mimetype="image/jpg")
+        return resp
     return render_template('index.html')
 
 
+def drawTextBlock(img, TEXT_HEIGHT, info):
+    blank = Image.new("RGB", [img.size[0], TEXT_HEIGHT], "black")
+    draw = ImageDraw.Draw(blank)
+    font = ImageFont.truetype('simsun.ttc', 15)
+    text = concatText(info)
+    draw.text((0, 0), text, fill=(55, 251, 240), font=font)
+    return blank
 
-# 查看图片
-@app.route("/photo/<imageId>.jpg")
-def get_frame(imageId):
-    # 图片上传保存的路径
-    with open(r'C:/dataAnalysis/pyWorkspace/pictureConcat/photo/{}.jpg'.format(imageId), 'rb') as f:
-        image = f.read()
-        resp = Response(image, mimetype="image/jpg")
-        return resp
+
+# # 查看图片
+# @app.route("/photo/<imageId>.jpg")
+# def get_frame(imageId):
+#     # 图片上传保存的路径
+#     with open(r'C:/dataAnalysis/pyWorkspace/pictureConcat/photo/{}.jpg'.format(imageId), 'rb') as f:
+#         image = f.read()
+#         resp = Response(image, mimetype="image/jpg")
+#         return resp
 
 
 if __name__ == "__main__":

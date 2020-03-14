@@ -3,10 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload</title>
+
+    <style type="text/css">
+      .top , .bottom {
+      height:30%;
+      width:100%;
+
+      }
+       #split {
+       height:5%;
+       width:100% ;
+        }
+
+      .left-top , .right-top , .left-bottom , .right-bottom {
+       width:49%;
+       float:left;
+       border:1px dashed #000
+      }
+
+    </style>
+
+    <script type="text/javascript">
+       function toVaild(){
+       var times = ["cameraTime1","cameraTime2","cameraTime3","cameraTime4"]
+       for( var time in times ){
+       var val = document.getElementById(time).value;
+                console.log(val);
+                var datetype = /^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-2][0-4]:[0-5][0-9]:[0-5][0-9]$/;
+                if (!(datetype.exec(val))){
+                   alter("抓拍时间只能为yyyy-mm-dd HH:MM:ss格式，如2020-01-01 12:00:00");
+                }
+       }
+       }
+
+    </script>
+
 </head>
-<h1>请上传图片文件</h1>
-<form action="" method=post enctype=multipart/form-data>
-    <table>
+<h1 align="center">请上传图片文件</h1>
+
+<body>
+<form action="/photo/upload" οnsubmit="return toVaild()" method=post enctype=multipart/form-data>
+    <div>
+        <div>请输入拼接后的文件名：<input type="text" name="fileName"/></div>
+        <div class="top">
+            <div class="left-top">
+                <div>左上角文件：<input type="file" name="file1"/></div>
+                <div>车牌号:<input type="text" name="carNum1"/></div>
+                <div>监控点:<input type="text" name="monitorPlace1"></div>
+                <div>抓拍时间:<input type="text" name="cameraTime1"></div>
+            </div>
+            <div class="right-top">
+                <div>右上角文件：<input type="file" name="file2"/></div>
+                <div>车牌号:<input type="text" name="carNum2"/></div>
+                <div>监控点:<input type="text" name="monitorPlace2"></div>
+                <div>抓拍时间:<input type="text" name="cameraTime2"></div>
+            </div>
+        </div>
+        <div id="split"></div>
+        <div class="bottom">
+            <div class="left-bottom">
+                <div>左下角文件：<input type="file" name="file3"/></div>
+                <div>车牌号:<input type="text" name="carNum3"/></div>
+                <div>监控点:<input type="text" name="monitorPlace3"></div>
+                <div>抓拍时间:<input type="text" name="cameraTime3"></div>
+            </div>
+            <div class="right-bottom">
+                <div>右下角文件：<input type="file" name="file4"/></div>
+                <div>车牌号:<input type="text" name="carNum4"/></div>
+                <div>监控点:<input type="text" name="monitorPlace4"></div>
+                <div>抓拍时间:<input type="text" name="cameraTime4"></div>
+            </div>
+        </div>
+        <div class="bottom"><input type=submit value="确定提交"/></div>
+    </div>
+
+
+    <!--<table>
         <tr><td>左上角文件：<input type=file name=file1></td>
             <td>右上角文件：<input type=file name=file2></td>
         </tr>
@@ -14,8 +86,10 @@
         <td>左下角文件：<input type=file name=file3></td>
         <td>右下角文件：<input type=file name=file4></td>
         </tr>
-    </table>
+    </table>-->
 
     <!--<input id="files" type="file" name="file" multiple="multiple">--></p>
-    <input type=submit value=Upload>
+
 </form>
+</body>
+</html>
