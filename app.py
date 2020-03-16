@@ -87,13 +87,14 @@ def uploads():
         for i in range(4):
             index = i + 1
             file = files[INFO[0] + str(index)]
+            print(file.filename)
             img = Image.open(file)
-            info = {INFO[0]: img, INFO[1]: form_data.get(INFO[1] + str(index)),
-                    INFO[2]: form_data.get(INFO[2] + str(index)),
+            info = {INFO[0]: img, INFO[1]: form_data.get(INFO[1]),
+                    INFO[2]: form_data.get(INFO[2]),
                     INFO[3]: form_data.get(INFO[3] + str(index))}
             infos.append(info)
 
-        TEXT_HEIGHT = 60  # 文本框高度
+        TEXT_HEIGHT = 180  # 文本框高度
         pic_width = infos[0][INFO[0]].size[0]
         pic_height = infos[0][INFO[0]].size[1]
         width = 2 * pic_width  # 上传的4张图片的宽度和高度需一致
@@ -120,9 +121,10 @@ def uploads():
         pj.paste(img_4, (pic_width, pic_height + TEXT_HEIGHT, 2 * pic_width, 2 * pic_height + TEXT_HEIGHT))
         img_4_1 = drawTextBlock(img_4, TEXT_HEIGHT, infos[3])
         pj.paste(img_4_1, (pic_width, 2 * pic_height + TEXT_HEIGHT, 2 * pic_width, 2 * pic_height + 2 * TEXT_HEIGHT))
-        save_file_path = UPLOAD_FOLDER + "/" + form_data.get("fileName")+".jpg"
+        save_file_path = UPLOAD_FOLDER + "/" + form_data.get("fileName") + ".jpg"
         pj.save(save_file_path)
 
+        closeImsge((img, img_1, img_1_1, img_2, img_2_1, img_3, img_3_1, img_4, img_4_1))
         with open(save_file_path, 'rb') as f:
             image = f.read()
             resp = Response(image, mimetype="image/jpg")
@@ -132,10 +134,15 @@ def uploads():
     return render_template('index.html')
 
 
+def closeImsge(images: ()):
+    for image in images:
+        image.close()
+
+
 def drawTextBlock(img, TEXT_HEIGHT, info):
     blank = Image.new("RGB", [img.size[0], TEXT_HEIGHT], "black")
     draw = ImageDraw.Draw(blank)
-    font = ImageFont.truetype('simsun.ttc', 15)
+    font = ImageFont.truetype('simsun.ttc', 60)
     text = concatText(info)
     draw.text((0, 0), text, fill=(55, 251, 240), font=font)
     return blank
@@ -152,4 +159,4 @@ def drawTextBlock(img, TEXT_HEIGHT, info):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
